@@ -1,7 +1,7 @@
 import numpy as np
 import re
 
-with open("input_small.txt", "r") as f:
+with open("input.txt", "r") as f:
     lines = f.readlines()
     lines = [line.strip() for line in lines]
 
@@ -12,10 +12,7 @@ for i, line in enumerate(lines):
     matches = re.findall(find_number, line)
     grid_lines.append(matches)
 
-
 grid = np.array(grid_lines)
-print(grid)
-
 
 # Part 1:
 num_rows, num_columns = grid.shape
@@ -29,38 +26,33 @@ for column_idx in range(num_columns):
     result = eval(equation)
     total_result += result
 
-print("total_result:", total_result)
+print("part1 total result:", total_result)
 
 
 # Part 2:
-padded_lines = []
-for i, line in enumerate(lines[:-1]):
-    check = line
+with open("input.txt", "r") as f:
+    lines = f.read().splitlines()
+    results = []
+    i = 0
+    while i < len(lines[0]):
+        operator = lines[-1][i]
+        operands = []
+        elems = [line[i] for line in lines[:-1]]
+        while any([True for elem in elems if elem != " "]):
+            operands.append("".join(elems))
+            # Check next number in current batch
+            if i < len(lines[0])-1:
+                i += 1
+                elems = [line[i] for line in lines[:-1]]
+            elif i == len(lines[0]) - 1:
+                break
+        i += 1
+        # Caclulate number
+        operands = [operand.strip() for operand in operands]
+        equation = operator.join(operands)
+        result = eval(equation)
+        #print(f"{result} = {equation}")
+        results.append(result)
 
-
-num_rows, num_columns = grid.shape
-total_result = 0
-for column_idx in range(num_columns):
-    operator = grid[-1,column_idx]
-    operands = grid[:-1,column_idx]
-
-    # Transform operands into the correct operands
-    new_operands = ["" for _ in operands]
-    operands = [list(operand) for operand in operands]
-    print(operands)
-    index = 0
-
-    from itertools import zip_longest
-
-    rows = ["1234", "56"]
-    operands = [''.join(c for c in operand if c is not None) for operand in zip_longest(*(reversed(s) for s in operands), fillvalue=None)]
-    print("cols", operands)
-
-
-    assert isinstance(operator, str)
-    equation = operator.join(operands)
-    result = eval(equation)
-    print(str(result) + " = " + equation )
-    total_result += result
-
-print("total_result:", total_result)
+total_result = sum([int(result) for result in results])
+print("part2 total result:", total_result )

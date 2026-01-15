@@ -6,7 +6,7 @@ with open("input_small.txt", "r") as f:
 
 boxes = []
 for i, line in enumerate(lines):
-    boxes.append([int(elem) for elem in line.split(",")])
+    boxes.append(tuple(int(elem) for elem in line.split(",")))
 
 print(boxes[0])
 
@@ -28,8 +28,7 @@ def calc_distances(boxes):
 
 
 
-# Part 1: connect up to 1000 boxes into clusters
-
+# Part 1: connect up to 1000 boxes into clusters (naive)
 distances = calc_distances(boxes)
 
 clusters = []
@@ -61,5 +60,49 @@ print(clusters[:5])
 print("Final result:", len(clusters[0]) * len(clusters[1]) * len(clusters[2]))
 
 
-# Part 2
-# xxx
+# Part 1: Use disjoint-set data structure (smart)
+class UnionFind():
+    def __init__(self, elements):
+        self.parent = {elem: elem for elem in elements}
+        self.rank = {elem: 0 for elem in elements}
+
+    def find(self, x):
+        if self.parent[x] != x:
+            # Iterate through tree till root and set parent of x directly to root (path compression)
+            self.parent[x] = self.find(self.parent[x])
+        return self.parent[x]
+    
+
+    def union(self, x, y):
+        px, py = self.find(x), self.find(y)
+        # Both points already have the same root => same cluster already
+        if px == py:
+            return
+        # If py is taller than px (higher rank), then add px to py, otherwise the other way around
+        if self.rank[px] < self.rank[py]:
+            py, px = px, py
+        self.parent[py] = px
+        # Only increase the rank (height), if both trees had the same rank, so the rank naturally increases
+        if self.rank[px] == self.rank[py]:
+            self.rank[px] += 1
+
+
+uf = UnionFind(set(tuple(box) for box in boxes))
+
+for pointA, pointB, _ in distances[:10]:
+    uf.union(pointA, pointB)
+
+clusters = {}
+# For each point, get it's root and add the point to the root set in the clusters dict
+for point in uf.parent:
+    root = uf.find(point)
+    if root not in clusters:
+        clusters[root] = set()
+    clusters[root].add(point)
+clusters = list(clusters.values())
+
+clusters.sort(key=lambda x:len(x), reverse=True)
+print(clusters)
+print("Final result:", len(clusters[0]) * len(clusters[1]) * len(clusters[2]))
+
+
